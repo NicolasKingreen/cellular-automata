@@ -7,8 +7,12 @@ from grid import Grid
 
 
 WIN_SIZE = 640, 420
-TARGET_FPSs = [6, 12, 24, 48]
+TARGET_FPS = 60
+
 CELL_SIZE = 10
+
+GEN_TIME_MS = 500  # 17 ms for 60 fps
+SPEED_MULTIPLIERS = [1, 2, 4, 8, 16]
 
 
 class Application:
@@ -20,14 +24,15 @@ class Application:
 
         self.grid = Grid(*WIN_SIZE, CELL_SIZE)
         self.paused = True
-        self.speed = 3
+        self.current_gen_time_ms = 0
+        self.current_speed_index = 0
 
     def run(self):
         while True:
 
-            frame_time_ms = self.clock.tick(TARGET_FPSs[self.speed])
+            frame_time_ms = self.clock.tick(TARGET_FPS)
 
-            new_caption = f'Cellular Automata (FPS: {TARGET_FPSs[self.speed]})'
+            new_caption = f'Cellular Automata (FPS: {self.clock.get_fps():.2f})'
             if self.paused:
                 new_caption += ' (paused)'
             pygame.display.set_caption(new_caption)
@@ -41,9 +46,11 @@ class Application:
                     elif event.key == K_SPACE:
                         self.paused = not self.paused
                     elif event.key == K_UP:
-                        self.speed = min(self.speed + 1, len(TARGET_FPSs) - 1)
+                        self.current_speed_index = min(self.current_speed_index + 1, len(SPEED_MULTIPLIERS) - 1)
                     elif event.key == K_DOWN:
-                        self.speed = max(self.speed - 1, 0)
+                        self.current_speed_index = max(self.current_speed_index - 1, 0)
+                    elif event.key == K_c:
+                        self.grid.clear()
                 elif event.type == MOUSEBUTTONDOWN:
                     if event.button == 1:
                         self.grid.add_cell(*event.pos)
@@ -51,7 +58,10 @@ class Application:
                         self.grid.remove_cell(*event.pos)
 
             if not self.paused:
-                self.grid.update()
+                self.current_gen_time_ms += frame_time_ms
+                if self.current_gen_time_ms >= GEN_TIME_MS / SPEED_MULTIPLIERS[self.current_speed_index]:
+                    self.current_gen_time_ms = 0
+                    self.grid.update()
 
             self.screen.fill((255, 255, 255))
             self.grid.draw(self.screen)

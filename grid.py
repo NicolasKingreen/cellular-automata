@@ -26,6 +26,10 @@ class Grid:
         y //= self.cell_size
         self.cells[y][x] = 0
 
+    def clear(self):
+        self.cells = [[0 for _ in range(self.width // self.cell_size)]
+                      for _ in range(self.height // self.cell_size)]
+
     def update(self):
         # neighbours
         self.neighbours = [[0 for _ in range(self.width // self.cell_size)]
